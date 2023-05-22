@@ -1,4 +1,4 @@
 from paddle.nn import functional as F
+import paddle
 
-try
-
+print(paddle.device.get_device())
