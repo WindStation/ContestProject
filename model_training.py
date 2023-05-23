@@ -6,6 +6,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import datetime
 import paddle
 from paddle import nn
+from paddle.nn import functional as F
 import paddlets
 from paddlets import TSDataset
 from paddlets import TimeSeries
@@ -37,3 +38,22 @@ class Net(nn.Layer):
         pred = self.fc(output)
         pred = pred[:, -1, :]
         return pred
+
+
+# 配置训练参数
+seq_length = 3  # 可以调整
+input_size = 5  # 输入特征维数为5维，这个是确定的
+hidden_size = 12    # 这个参数还有待确定
+batch_size = 64     # 训练一批次的参数，可以调整
+loss_rate = 0.001
+split_ratio = 0.8
+
+model = Net(input_size, hidden_size, num_layers=1, output_size=1)
+criteria = nn.MSELoss()
+optimizer = paddle.optimizer.Adam(parameters=model.parameters())
+optimizer.set_lr(loss_rate)
+
+# print(model)
+
+# 训练
+
