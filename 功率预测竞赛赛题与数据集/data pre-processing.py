@@ -1,13 +1,10 @@
 #数据处理部分之前的代码，加入部分数据处理的库
-import paddle
-from paddle.nn import Linear
-import paddle.nn.functional as F
+#导入需要的包
 import os
-import gzip
-import json
-import random
-import numpy as np
 import pandas as pd
+import numpy as np
+import docx
+import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import datetime
 import paddlets
@@ -19,6 +16,7 @@ from paddlets.metrics import MSE, MAE
 from paddlets.analysis import AnalysisReport, Summary
 from paddlets.datasets.repository import get_dataset
 import warnings
+warnings.filterwarnings('ignore')
 
 def data_preprocess(data_dir):
     files = os.listdir(data_dir)    #用于返回指定的文件夹包含的文件或文件夹的名字的列表。
@@ -86,3 +84,6 @@ target_cov_dataset = TSDataset.load_from_dataframe(
     fill_missing_dates=True,
     fillna_method = 'pre'
 )
+train_dataset, val_test_dataset = target_cov_dataset.split(0.7)
+val_dataset, test_dataset = val_test_dataset.split(0.3)
+train_dataset.plot(add_data=[val_dataset,test_dataset], labels=['Val', 'Test'])
