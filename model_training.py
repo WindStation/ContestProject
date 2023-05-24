@@ -49,6 +49,12 @@ class Net(nn.Layer):
         return output
 
 
+
+#用来按照官方给的测试方法来评价
+def calc_acc(y_true, y_pred):
+        rmse = np.sqrt(np.mean((y_true - y_pred) ** 2))
+        return 1 - rmse / 201000
+
 # 配置训练参数
 input_len = 120 * 4  # 输入序列长度
 pred_len = 24 * 4  # 预测序列的长度
