@@ -1,12 +1,17 @@
-class EarlyStopping():
+import paddle
+import numpy as np
+
+
+# TODO 修改循环逻辑
+class EarlyStopping:
     """早停
     当验证集超过patience个epoch没有出现更好的评估分数，及早终止训练
     若当前epoch表现超过历史最佳分数，保存该节点模型
     参考：https://blog.csdn.net/m0_63642362/article/details/121244655
     """
-    for i in range(1,11):
+    for i in range(1, 11):
         def __init__(self, patience=7, verbose=False, delta=0,
-                     ckp_save_path='/home/aistudio/submission/model/model_checkpoint_windid_i.pdparams'):
+                     ckp_save_path='/submission/model/model_checkpoint_windid_i.pdparams'):
             self.patience = patience
             self.verbose = verbose
             self.counter = 0
@@ -40,5 +45,6 @@ class EarlyStopping():
             if self.verbose:
                 print(
                     f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
-            paddle.save(model.state_dict(),'/home/aistudio/submission/model/model_checkpoint_windid_{:02d}.pdparams'.format(i))
+            paddle.save(model.state_dict(),
+                        '/submission/model/model_checkpoint_windid_{:02d}.pdparams'.format(i))
             self.val_loss_min = val_loss
