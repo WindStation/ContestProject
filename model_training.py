@@ -72,4 +72,20 @@ optimizer.set_lr(loss_rate)
 
 # print(model)
 
-# 训练
+# 训练，先以一个文件为例
+df = pd.read_csv("功率预测竞赛赛题与数据集/01.csv", parse_dates=['DATATIME'], infer_datetime_format=True, dayfirst=True,
+                 dtype={'WINDDIRECTION': np.float64, 'HUMIDITY': np.float64, 'PRESSURE': np.float64})
+target_cov_dataset = TSDataset.load_from_dataframe(
+    df,
+    time_col='DATATIME',
+    target_cols=['ROUND(A.POWER,0)', 'YD15'],
+    observed_cov_cols=['WINDSPEED', 'PREPOWER', 'WINDDIRECTION', 'TEMPERATURE',
+                       'HUMIDITY', 'PRESSURE', 'ROUND(A.WS,1)'],
+    freq='15min',
+    fill_missing_dates=True,
+    fillna_method='pre'
+)
+
+def train(df, turb_id):
+    training_data = TSDataset.
+
