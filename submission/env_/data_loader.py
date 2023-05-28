@@ -94,7 +94,7 @@ class TSDataset(paddle.io.Dataset):
             self.scaler.fit(train_data)
             data = self.scaler.transform(x_values)
             # 保存scaler
-            pickle.dump(self.scaler, open('/home/aistudio/submission/model/scaler.pkl', 'wb'))
+            pickle.dump(self.scaler, open('../model/scaler.pkl', 'wb'))
         else:
             data = x_values
 
@@ -166,7 +166,7 @@ class TSPredDataset(paddle.io.Dataset):
         self.scaler = StandardScaler()
         if self.scale:
             # 读取预训练好的scaler
-            self.scaler = pickle.load(open('/home/aistudio/submission/model/scaler.pkl', 'rb'))
+            self.scaler = pickle.load(open('../model/scaler.pkl', 'rb'))
             data = self.scaler.transform(x_values)
         else:
             data = x_values
