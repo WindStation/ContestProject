@@ -43,27 +43,30 @@ class Net(nn.Layer):
 
         return output
 
+
 def calc_acc(y_true, y_pred):
-        rmse = np.sqrt(np.mean((y_true - y_pred) ** 2))
-        return 1 - rmse / 201000
+    rmse = np.sqrt(np.mean((y_true - y_pred) ** 2))
+    return 1 - rmse / 201000
 
 
 # 配置训练参数
 input_len = 120 * 4  # 输入序列长度
 pred_len = 24 * 4  # 预测序列的长度
-input_size = 6  # 输入特征维数为6维，这个是确定的
+input_size = 14  # 输入特征维数为6维，这个是确定的
 hidden_size = 12  # 这个参数还有待确定
 epoch_num = 100  # 模型训练轮次数
 batch_size = 512  # 训练一批次的样本数
 loss_rate = 0.001
 split_ratio = 0.8
-learning_rate = 0.001 # 学习率
+learning_rate = 0.001  # 学习率
 patience = 10  # 如果连续patience个轮次性能没有提升，就会停止训练
+
+
 def train(df, turbine_id):
     # 设置数据集
-    train_dataset = TSDataset(df, input_len = input_len, pred_len = pred_len, data_type='train')
-    val_dataset = TSDataset(df, input_len = input_len, pred_len = pred_len, data_type='val')
-    test_dataset = TSDataset(df, input_len = input_len, pred_len = pred_len, data_type='test')
+    train_dataset = TSDataset(df, input_len=input_len, pred_len=pred_len, data_type='train')
+    val_dataset = TSDataset(df, input_len=input_len, pred_len=pred_len, data_type='val')
+    test_dataset = TSDataset(df, input_len=input_len, pred_len=pred_len, data_type='test')
     print(f'LEN | train_dataset:{len(train_dataset)}, val_dataset:{len(val_dataset)}, test_dataset:{len(test_dataset)}')
 
     # 设置数据读取器
@@ -72,26 +75,25 @@ def train(df, turbine_id):
     test_loader = paddle.io.DataLoader(test_dataset, shuffle=False, batch_size=1, drop_last=False)
 
     # 设置模型
-    model = Net(input_size, hidden_size, num_layers=1, output_size=2, input_len=input_len, pred_len=pred_len)
-
+    model = Net(input_size, hidden_size, num_layers=1, output_size=1, input_len=input_len, pred_len=pred_len)
 
     # 设置优化器
     scheduler = paddle.optimizer.lr.ReduceOnPlateau(learning_rate=learning_rate, factor=0.5, patience=3, verbose=True)
     opt = paddle.optimizer.Adam(learning_rate=scheduler, parameters=model.parameters())
 
-    #设置损失函数
+    # 设置损失函数
     criteria = nn.MSELoss()
 
     train_loss = []
     valid_loss = []
     train_epochs_loss = []
     valid_epochs_loss = []
-    early_stopping = EarlyStopping(patience=patience, turb_id=turbine_id,verbose=True)
+    early_stopping = EarlyStopping(patience=patience, turb_id=turbine_id, verbose=True)
 
     for epoch in tqdm(range(epoch_num)):
         # =====================train============================
-        #train_epoch_loss, train_epoch_mse1, train_epoch_mse2 = [], [], []  改为下面的
-        train_epoch_loss=[]
+        # train_epoch_loss, train_epoch_mse1, train_epoch_mse2 = [], [], []  改为下面的
+        train_epoch_loss = []
         model.train()  # 开启训练
         for batch_id, data in enumerate(train_loader()):
             x = data[0]
@@ -110,7 +112,7 @@ def train(df, turbine_id):
             train_loss.append(mse.item())
 
         train_epochs_loss.append(np.average(train_epoch_loss))
-        print("epoch={}/{} of train | loss={}".format(epoch, epoch_num,np.averag(train_epoch_loss)))
+        print("epoch={}/{} of train | loss={}".format(epoch, epoch_num, np.averag(train_epoch_loss)))
 
         # =====================valid============================
         model.eval()  # 开启评估/预测
@@ -167,21 +169,23 @@ def train(df, turbine_id):
         test_accs1.append(acc1)
         test_accs2.append(acc2)
 
-data_path = 'E:\竞赛\软件杯\ContestProject\功率预测竞赛赛题与数据集'
+
+# data_path = 'E:\竞赛\软件杯\ContestProject\功率预测竞赛赛题与数据集'
+data_path = '../../功率预测竞赛赛题与数据集'
 files = os.listdir(data_path)
-debug = True # 为了快速跑通代码，可以先尝试用采样数据做debug
+debug = True  # 为了快速跑通代码，可以先尝试用采样数据做debug
 
 # 遍历每个风机的数据做训练、验证和测试
 for f in files:
     df = pd.read_csv(os.path.join(data_path, f),
-                    parse_dates=['DATATIME'],
-                    infer_datetime_format=True,
-                    dayfirst=True)
+                     parse_dates=['DATATIME'],
+                     infer_datetime_format=True,
+                     dayfirst=True)
     turbine_id = int(float(f.split('.csv')[0]))
     print(f'turbine_id:{turbine_id}')
 
     if debug:
-        df = df.iloc[-24*4*200:,:]
+        df = df.iloc[-24 * 4 * 200:, :]
 
     # 数据预处理
     df = data_preprocess(df)
