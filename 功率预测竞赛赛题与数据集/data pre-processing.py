@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import datetime
 import paddlets
+import paddle
+paddle.seed(102)
+
 from paddlets import TSDataset
 from paddlets import TimeSeries
 from paddlets.models.forecasting import MLPRegressor, LSTNetRegressor
@@ -103,3 +106,5 @@ print(target_cov_dataset.summary())
 train_dataset, val_test_dataset = target_cov_dataset.split(0.7)
 val_dataset, test_dataset = val_test_dataset.split(0.3)
 train_dataset.plot(add_data=[val_dataset, test_dataset], labels=['Val', 'Test'])
+
+
