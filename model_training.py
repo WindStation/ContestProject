@@ -1,3 +1,6 @@
+# 该文件的内容已经迁移至submission文件夹内，请不要在该文件进行编码
+
+
 import os
 import pandas as pd
 import numpy as np
