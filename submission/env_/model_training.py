@@ -76,13 +76,13 @@ def calc_acc(y_true, y_pred):
 input_len = 120 * 4  # 输入序列长度
 pred_len = 24 * 4  # 预测序列的长度
 input_size = 14  # 输入特征维数为6维，这个是确定的
-hidden_size = 12  # 这个参数还有待确定
+hidden_size = 32  # 这个参数还有待确定
 epoch_num = 100  # 模型训练轮次数
 batch_size = 512  # 训练一批次的样本数
 loss_rate = 0.001
 split_ratio = 0.8
 learning_rate = 0.001  # 学习率
-patience = 10  # 如果连续patience个轮次性能没有提升，就会停止训练
+patience = 20  # 如果连续patience个轮次性能没有提升，就会停止训练
 
 
 def train(df, turbine_id):
@@ -104,8 +104,9 @@ def train(df, turbine_id):
     scheduler = paddle.optimizer.lr.ReduceOnPlateau(learning_rate=learning_rate, factor=0.5, patience=3, verbose=True)
     opt = paddle.optimizer.Adam(learning_rate=scheduler, parameters=model.parameters())
 
-    # 设置损失函数
-    criteria = nn.MSELoss()
+    # 设置损失函数，使用自定义的损失处理类，下面对应调用都要更改
+    # criteria = nn.MSELoss()
+    double_loss = Loss()
 
     train_loss = []
     valid_loss = []
@@ -115,29 +116,31 @@ def train(df, turbine_id):
 
     for epoch in tqdm(range(epoch_num)):
         # =====================train============================
-        # train_epoch_loss, train_epoch_mse1, train_epoch_mse2 = [], [], []  改为下面的
-        train_epoch_loss = []
+        # train_epoch_loss, train_epoch_mse1, train_epoch_mse2 = [], [], []  直接使用
+        train_epoch_loss, train_epoch_mse1, train_epoch_mse2 = [], [], []
         model.train()  # 开启训练
         for batch_id, data in enumerate(train_loader()):
             x = data[0]
             y = data[1]
-            print(f'x:\n{x}\ny:\n{y}')
+            # print(f'x:\n{x}\ny:\n{y}')
             # 预测
             outputs = model(x)
-            print(outputs)
+            # print(outputs)
             # 计算损失
-            mse = criteria(outputs, y)
+            mse_1, mse_2, avg_loss = double_loss(outputs, y)
             # 反向传播
-            mse.backward()
+            avg_loss.backward()
             # 梯度下降
             opt.step()
             # 清空梯度
             opt.clear_grad()
-            train_epoch_loss.append(mse.numpy()[0])
-            train_loss.append(mse.item())
+            train_epoch_loss.append(avg_loss.numpy()[0])
+            train_loss.append(avg_loss.item())
+            train_epoch_mse1.append(mse_1.item())
+            train_epoch_mse2.append(mse_2.item())
 
         train_epochs_loss.append(np.average(train_epoch_loss))
-        print("epoch={}/{} of train | loss={}".format(epoch, epoch_num, np.averag(train_epoch_loss)))
+        print("epoch={}/{} of train | loss={}".format(epoch, epoch_num, np.average(train_epoch_loss)))
 
         # =====================valid============================
         model.eval()  # 开启评估/预测
@@ -146,9 +149,11 @@ def train(df, turbine_id):
             x = data[0]
             y = data[1]
             outputs = model(x)
-            avg_loss = criteria(outputs, y)
+            mse_1, mse_2, avg_loss = double_loss(outputs, y)
             valid_epoch_loss.append(avg_loss.numpy()[0])
             valid_loss.append(avg_loss.numpy()[0])
+            valid_epochs_mse1.append(mse_1.item())
+            valid_epochs_mse2.append(mse_2.item())
 
         valid_epochs_loss.append(np.average(valid_epoch_loss))
         print('Valid:MSE of YD15:{}'.format(np.average(train_epoch_loss)))
@@ -177,7 +182,7 @@ def train(df, turbine_id):
     # =====================test============================
     # 加载最优epoch节点下的模型
     model = Net(input_size, hidden_size, num_layers=1, output_size=2, input_len=input_len, pred_len=pred_len)
-    model.set_state_dict(paddle.load(f'/model/model_checkpoint_windid_{turbine_id}.pdparams'))
+    model.set_state_dict(paddle.load(f'../model/model_checkpoint_windid_{turbine_id}.pdparams'))
 
     model.eval()  # 开启评估/预测
     test_loss, test_epoch_mse1, test_epoch_mse2 = [], [], []
@@ -187,10 +192,12 @@ def train(df, turbine_id):
         y = data[1]
         ts_y = [from_unix_time(x) for x in data[3].numpy().squeeze(0)]
         outputs = model(x)
-        avg_loss = criteria(outputs, y)
+        mse_1, mse_2, avg_loss = double_loss(outputs, y)
         acc1 = calc_acc(y.numpy().squeeze(0)[:, 0], outputs[0].numpy().squeeze(0))
         acc2 = calc_acc(y.numpy().squeeze(0)[:, 1], outputs[1].numpy().squeeze(0))
         test_loss.append(avg_loss.numpy()[0])
+        test_epoch_mse1.append(mse_1.numpy()[0])
+        test_epoch_mse2.append(mse_2.numpy()[0])
         test_accs1.append(acc1)
         test_accs2.append(acc2)
 
@@ -198,7 +205,7 @@ def train(df, turbine_id):
 # data_path = 'E:\竞赛\软件杯\ContestProject\功率预测竞赛赛题与数据集'
 data_path = '../../功率预测竞赛赛题与数据集'
 files = os.listdir(data_path)
-debug = True  # 为了快速跑通代码，可以先尝试用采样数据做debug
+debug = False  # 为了快速跑通代码，可以先尝试用采样数据做debug
 
 # 遍历每个风机的数据做训练、验证和测试
 for f in files:

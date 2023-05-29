@@ -1,6 +1,8 @@
 import os
 import datetime
 import pickle
+import time
+
 import paddle
 import paddle.fluid as fluid
 import pandas as pd
@@ -17,7 +19,7 @@ plt.rcParams['font.sans-serif'] = ['SimHei']
 # 随机种子，保证实验能复现
 import random
 
-seed = 42
+seed = int(time.time())
 paddle.seed(seed)
 np.random.seed(seed)
 random.seed(seed)
