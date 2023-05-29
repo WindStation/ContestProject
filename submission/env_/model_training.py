@@ -23,9 +23,12 @@ class Net(nn.Layer):
         # lstm层
         self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers,
                             time_major=False, direction='forward')
-        # 全连接层+dropout层
-        self.fc_1 = nn.Linear(in_features=input_len * hidden_size, out_features=hidden_size * 2)
-        self.fc_2 = nn.Linear(in_features=hidden_size * 2, out_features=pred_len)
+        # ROUND字段的全连接层
+        self.fc1_1 = nn.Linear(in_features=input_len * hidden_size, out_features=hidden_size * 2)
+        self.fc1_2 = nn.Linear(in_features=hidden_size * 2, out_features=pred_len)
+        # YD15的全连接层
+        self.fc2_1 = nn.Linear(in_features=input_len * hidden_size, out_features=hidden_size * 2)
+        self.fc2_2 = nn.Linear(in_features=hidden_size * 2, out_features=pred_len)
         self.dropout = nn.Dropout(dropout_rate)
 
     def forward(self, x):
@@ -37,11 +40,31 @@ class Net(nn.Layer):
         # return pred
         output, (hidden, cell) = self.lstm(x)
         output = paddle.reshape(output, [len(output), -1])
-        output = self.fc_1(output)
-        output = self.dropout(output)
-        output = self.fc_2(output)
+        # output = self.fc_1(output)
+        # output = self.dropout(output)
+        # output = self.fc_2(output)
+        output1 = self.fc1_1(output)
+        output1 = self.dropout(output1)
+        output1 = self.fc1_2(output1)
 
-        return output
+        output2 = self.fc2_1(output)
+        output2 = self.dropout(output2)
+        output2 = self.fc2_2(output2)
+
+        return [output1, output2]
+
+
+class Loss(nn.Layer):
+
+    def __init__(self):
+        super(Loss, self).__init__()
+
+    def forward(self, inputs, labels):
+        mse_loss = nn.loss.MSELoss()
+        mse_1 = mse_loss(inputs[0], labels[:, :, 0].squeeze(-1))
+        mse_2 = mse_loss(inputs[1], labels[:, :, 1].squeeze(-1))
+        # 设置权重偏向YD15
+        return mse_1, mse_2, 0.3 * mse_1 + 0.7 * mse_2
 
 
 def calc_acc(y_true, y_pred):
@@ -75,7 +98,7 @@ def train(df, turbine_id):
     test_loader = paddle.io.DataLoader(test_dataset, shuffle=False, batch_size=1, drop_last=False)
 
     # 设置模型
-    model = Net(input_size, hidden_size, num_layers=1, output_size=1, input_len=input_len, pred_len=pred_len)
+    model = Net(input_size, hidden_size, num_layers=2, output_size=2, input_len=input_len, pred_len=pred_len)
 
     # 设置优化器
     scheduler = paddle.optimizer.lr.ReduceOnPlateau(learning_rate=learning_rate, factor=0.5, patience=3, verbose=True)
@@ -98,8 +121,10 @@ def train(df, turbine_id):
         for batch_id, data in enumerate(train_loader()):
             x = data[0]
             y = data[1]
+            print(f'x:\n{x}\ny:\n{y}')
             # 预测
             outputs = model(x)
+            print(outputs)
             # 计算损失
             mse = criteria(outputs, y)
             # 反向传播
