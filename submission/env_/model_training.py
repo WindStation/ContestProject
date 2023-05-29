@@ -200,6 +200,10 @@ def train(df, turbine_id):
         test_epoch_mse2.append(mse_2.numpy()[0])
         test_accs1.append(acc1)
         test_accs2.append(acc2)
+    print('Test: ')
+    print('MSE of ROUND(A.POWER,0):{}, MSE of YD15:{}'.format(np.average(test_epoch_mse1), np.average(test_epoch_mse2)))
+    print('Mean MSE:', np.mean(test_loss))
+    print('ACC of ROUND(A.POWER,0):{}, ACC of YD15:{}'.format(np.average(test_accs1), np.average(test_accs2)))
 
 
 # data_path = 'E:\竞赛\软件杯\ContestProject\功率预测竞赛赛题与数据集'
