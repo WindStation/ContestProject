@@ -24,7 +24,7 @@ def forecast(df, turbine_id, out_file):
     pred_loader = paddle.io.DataLoader(pred_dataset, shuffle=False, batch_size=1, drop_last=False)
     # 定义模型 (修改为 Net)
     # TODO 下面的参数可能还需要进行调整
-    model = model_training.Net(input_len=input_len, input_size=14, hidden_size=64, num_layers=2, pred_len=pred_len,
+    model = model_training.Net(input_len=input_len, input_size=14, hidden_size=32, num_layers=2, pred_len=pred_len,
                                output_size=2)
     # 导入模型权重文件  （这个地方的路径会根据训练的模型权重文件路径改变 ）  ！！
     model.set_state_dict(paddle.load(f'model/model_checkpoint_windid_{turbine_id}.pdparams'))
@@ -39,17 +39,19 @@ def forecast(df, turbine_id, out_file):
         ts_x = [from_unix_time(x) for x in data[2].numpy().squeeze(0)]
         ts_y = [from_unix_time(x) for x in data[3].numpy().squeeze(0)]
 
+    # 这里修改过下一条语句
     result = pd.DataFrame({'DATATIME': ts_y, 'ROUND(A.POWER,0)': apower, 'YD15': yd15})
+    # result = pd.DataFrame({'DATATIME': ts_y, 'ROUND(A.POWER,0)': outputs[0].squeeze(), 'YD15': outputs[1].squeeze()})
     result['TurbID'] = turbine_id
     result = result[['TurbID', 'DATATIME', 'ROUND(A.POWER,0)', 'YD15']]
     result.to_csv(out_file, index=False)
 
 
 if __name__ == "__main__":
-    files = os.listdir('infile')
+    files = os.listdir('../infile')
     # 如果没有这个文件 会创建这个文件 用来存放最终的预测结果
-    if not os.path.exists('pred'):
-        os.mkdir('pred')
+    if not os.path.exists('../pred'):
+        os.mkdir('../pred')
     # 第一步，完成数据格式统一
     for f in files:
         if '.csv' not in f:  # TODO 这个地方如果文件格式不是 .csv 就直接跳过了 ？？
@@ -57,9 +59,9 @@ if __name__ == "__main__":
 
         print(f)
         # 获取文件路径 （获得的是完整路径名）
-        data_file = os.path.join('infile', f)
+        data_file = os.path.join('../infile', f)
         print(data_file)
-        out_file = os.path.join('pred', f[:4] + 'out.csv')
+        out_file = os.path.join('../pred', f[:4] + 'out.csv')
         df = pd.read_csv(data_file,
                          parse_dates=['DATATIME'],
                          infer_datetime_format=True,
