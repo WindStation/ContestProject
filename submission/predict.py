@@ -24,7 +24,7 @@ def forecast(df, turbine_id, out_file):
     pred_loader = paddle.io.DataLoader(pred_dataset, shuffle=False, batch_size=1, drop_last=False)
     # 定义模型 (修改为 Net)
     # TODO 下面的参数可能还需要进行调整
-    model = model_training.Net(input_len=input_len, input_size=14, hidden_size=32, num_layers=2, pred_len=pred_len,
+    model = model_training.Net(input_len=input_len, input_size=10, hidden_size=48, num_layers=2, pred_len=pred_len,
                                output_size=2)
     # 导入模型权重文件  （这个地方的路径会根据训练的模型权重文件路径改变 ）  ！！
     model.set_state_dict(paddle.load(f'model/model_checkpoint_windid_{turbine_id}.pdparams'))
