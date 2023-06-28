@@ -211,7 +211,7 @@ def train(df, turbine_id):
 # data_path = 'E:\竞赛\软件杯\ContestProject\功率预测竞赛赛题与数据集'
 if __name__ == '__main__':
     paddle.device.set_device('gpu:0')
-    data_path = '../../功率预测竞赛赛题与数据集'
+    data_path = '../../区域赛数据集'
     files = os.listdir(data_path)
     debug = False  # 为了快速跑通代码，可以先尝试用采样数据做debug
 
