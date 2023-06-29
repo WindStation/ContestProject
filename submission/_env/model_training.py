@@ -82,7 +82,7 @@ epoch_num = 100  # 模型训练轮次数
 batch_size = 512  # 训练一批次的样本数
 loss_rate = 0.001
 split_ratio = 0.8
-learning_rate = 0.001  # 学习率
+learning_rate = 0.01  # 学习率
 patience = 15  # 如果连续patience个轮次性能没有提升，就会停止训练
 
 
@@ -231,7 +231,8 @@ if __name__ == '__main__':
         df = data_preprocess(df)
         # 特征工程
         df = feature_engineer(df)
-
+        # Debug
+        if turbine_id != 19:
+            continue
         # 训练模型
         train(df, turbine_id)
-

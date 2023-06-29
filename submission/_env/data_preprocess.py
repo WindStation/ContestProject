@@ -35,30 +35,35 @@ def data_preprocess(df):
     df.loc[df['ROUND(A.WS,1)'] == 0, 'YD15'] = 0
 
     # 根据阈值，过大或过小的值视为异常值，去除，变成缺失值，到后面处理
-    df.loc[(df['ROUND(A.WS,1)'] > 1e10) | (df['ROUND(A.WS,1)'] < -1e10), 'ROUND(A.WS,1)'] = None
-    df.loc[(df['ROUND(A.POWER,0)'] > 1e10) | (df['ROUND(A.POWER,0)'] < -1e10), 'ROUND(A.POWER,0)'] = None
+    df.loc[(df['ROUND(A.WS,1)'] > 1e8) | (df['ROUND(A.WS,1)'] < -1e2), 'ROUND(A.WS,1)'] = np.nan
+    df.loc[(df['ROUND(A.POWER,0)'] > 1e8) | (df['ROUND(A.POWER,0)'] < -1e4), 'ROUND(A.POWER,0)'] = np.nan
 
     # ===========缺失值处理===========
     for idx, data in df.iterrows():
-        if data['ROUND(A.WS,1)'] is None:
+
+        if pd.isna(data['ROUND(A.WS,1)']):
+            # print(f'检测到 {idx} 行，风速为空，进行替换')
             data['ROUND(A.WS,1)'] = data['WINDSPEED']
 
-        if data['YD15'] is None:
-            if data['ROUND(A.POWER,0)'] is not None:
+        if pd.isna(data['YD15']) == np.nan:
+            if not pd.isna(data['ROUND(A.POWER,0)']):
+                # print(f'检测到 {idx} 行,yd15功率为空,替换为ROUND')
                 data['YD15'] = data['ROUND(A.POWER,0)']
             else:
                 data['YD15'] = data['PREPOWER']
+                # print(f'检测到 {idx} 行,yd15功率为空,替换为PREPOWER')
 
-        if data['ROUND(A.POWER,0)'] is None:
-            if data['YD15'] is not None:
+        if pd.isna(data['ROUND(A.POWER,0)']):
+            if not pd.isna(data['YD15']):
                 data['ROUND(A.POWER,0)'] = data['YD15']
+                # print(f'检测到 {idx} 行,round功率为空,yd15')
             else:
                 data['ROUND(A.POWER,0)'] = data['PREPOWER']
+                # print(f'检测到 {idx} 行,round功率为空,替换为PREPOWER')
 
     # 可选：尝试一些其他缺失值处理方式，比如，用同时刻附近风机的值求均值填补缺失值
     df = df.interpolate(method='linear', limit_direction='both').reset_index()
     print('After Resampling:', df.shape)
-
 
     # 可选： 风速过大但功率为0的异常：先设计函数拟合出：实际功率=f(风速)，
     # 然后代入异常功率的风速获取理想功率，替换原异常功率
